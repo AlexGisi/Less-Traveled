@@ -12,14 +12,47 @@ import CoreLocation
 class MapViewController: UIViewController {
     
     @IBOutlet weak var map: MKMapView!
+    @IBOutlet weak var trackLabel: UILabel!
+    private var currentLocation: CLLocation?
     
     private let location_manager = CLLocationManager()
+    
+    private var doPanToUser = true
+    private var pastVisitedLocations: [CLLocation] = readVisitedLocations()
+    private var justVisitedLocations: [CLLocation] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        map.showsUserLocation = true
+        map.showsTraffic = true
         attemptLocationAccess()
         startLocationAccess()
+        
+        enableTrackLabelTap()
+        updateTrackLabelText()
+    }
+    
+    public func saveUserData() {
+        writeVisitedLocations(pastVisitedLocations, justVisitedLocations)
+    }
+    
+    @objc private func trackLabelTapped(_ sender: UITapGestureRecognizer) {
+        self.doPanToUser.toggle()
+        self.updateTrackLabelText()
+    }
+    
+    private func updateTrackLabelText() {
+        if self.doPanToUser {
+            self.trackLabel.text = "Tracking User"
+        } else {
+            self.trackLabel.text = "Not Tracking User"
+        }
+    }
+    private func enableTrackLabelTap() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.trackLabelTapped(_:)))
+        self.trackLabel.isUserInteractionEnabled = true
+        self.trackLabel.addGestureRecognizer(tap)
     }
     
     private func attemptLocationAccess() {
@@ -39,7 +72,7 @@ class MapViewController: UIViewController {
     }
     
     private func recoverLocationAcces() {
-        let alert = UIAlertController(title: "Precise Location Access Required", message: "In order to use the app, precise location access must be granted.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Incorrect Location Settings", message: "In order to use the app, precise and permanent location access must be granted.", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alert.addAction(UIAlertAction(title: "Open Settings", style: .default) { (action) in
             if let url = NSURL(string: UIApplication.openSettingsURLString) {
@@ -52,19 +85,30 @@ class MapViewController: UIViewController {
     private func checkProperLocationAccess(_ manager: CLLocationManager) {
         switch manager.authorizationStatus {
         case .authorizedAlways, .authorizedWhenInUse:
-            print("Good.")
+            return
         default:
-            print("recovering...")
             recoverLocationAcces()
         }
         
         switch manager.accuracyAuthorization {
         case .fullAccuracy:
-            print("Accuracy good.")
+            return
         default:
-            print("recovering for accuracy...")
             recoverLocationAcces()
         }
+    }
+    
+    private func displayCurrentRegion() {
+        if let location = self.currentLocation {
+            let center = location.coordinate
+            let region = MKCoordinateRegion(center: center, span: MKCoordinateSpan(latitudeDelta: 0.025, longitudeDelta: 0.025))
+            self.map.setRegion(region, animated: true)
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        self.doPanToUser = false
+        updateTrackLabelText()
     }
 }
 
@@ -73,9 +117,16 @@ class MapViewController: UIViewController {
 extension MapViewController: CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         checkProperLocationAccess(manager)
+        startLocationAccess()
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        if let location = locations.last {
+            self.currentLocation = location
+            if doPanToUser {
+                displayCurrentRegion()
+            }
+        }
         
     }
 
