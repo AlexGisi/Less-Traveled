@@ -8,6 +8,7 @@
 import Foundation
 import CoreLocation
 
+// MARK: UserData Struct and Functions
 struct UserData: Codable {
     let visited: [VisitedLocation]
 }
@@ -48,7 +49,7 @@ func readVisitedLocations() -> [CLLocation] {
     return visited
 }
 
-func writeVisitedLocations(_ pastVisited: [CLLocation], _ justVisited: [CLLocation]) {
+func writeVisitedLocations(past pastVisited: [CLLocation], just justVisited: [CLLocation]) {
     let visited: [CLLocation] = pastVisited + justVisited
     let encodableVisited: [VisitedLocation] = visited.map {VisitedLocation(latitude: $0.coordinate.latitude,
                                                                            longitude: $0.coordinate.longitude,
@@ -68,6 +69,7 @@ func writeVisitedLocations(_ pastVisited: [CLLocation], _ justVisited: [CLLocati
     let path = getUserDataPath()
     do {
         try encodedData.write(to: path)
+        print("wrote to \(getUserDataPath().path)")
     } catch {
         print("writing error: \(error)")
     }

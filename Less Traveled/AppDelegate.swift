@@ -33,7 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func applicationWillTerminate(_ application: UIApplication) {
-        mapVC.saveUserData()
+        
     }
 
     // MARK: - Core Data stack

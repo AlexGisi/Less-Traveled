@@ -26,15 +26,20 @@ class MapViewController: UIViewController {
         
         map.showsUserLocation = true
         map.showsTraffic = true
-        attemptLocationAccess()
+        attemptLocationSetup()
         startLocationAccess()
         
         enableTrackLabelTap()
         updateTrackLabelText()
     }
     
+    public func addLocation(_ location: CLLocation) {
+        self.justVisitedLocations.append(location)
+        saveUserData()
+    }
+    
     public func saveUserData() {
-        writeVisitedLocations(pastVisitedLocations, justVisitedLocations)
+        writeVisitedLocations(past: self.pastVisitedLocations, just: self.justVisitedLocations)
     }
     
     @objc private func trackLabelTapped(_ sender: UITapGestureRecognizer) {
@@ -55,7 +60,7 @@ class MapViewController: UIViewController {
         self.trackLabel.addGestureRecognizer(tap)
     }
     
-    private func attemptLocationAccess() {
+    private func attemptLocationSetup() {
         guard CLLocationManager.locationServicesEnabled() else {
             return
         }
@@ -83,18 +88,22 @@ class MapViewController: UIViewController {
     }
     
     private func checkProperLocationAccess(_ manager: CLLocationManager) {
-        switch manager.authorizationStatus {
-        case .authorizedAlways, .authorizedWhenInUse:
-            return
-        default:
+        if !hasProperLocationAccess(location_manager) {
             recoverLocationAcces()
         }
-        
-        switch manager.accuracyAuthorization {
-        case .fullAccuracy:
-            return
+    }
+    
+    private func hasProperLocationAccess(_ manager: CLLocationManager) -> Bool {
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            switch manager.accuracyAuthorization {
+            case .fullAccuracy:
+                return true
+            default:
+                return false
+            }
         default:
-            recoverLocationAcces()
+            return false
         }
     }
     
@@ -122,6 +131,7 @@ extension MapViewController: CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.last {
+            self.addLocation(location)
             self.currentLocation = location
             if doPanToUser {
                 displayCurrentRegion()
