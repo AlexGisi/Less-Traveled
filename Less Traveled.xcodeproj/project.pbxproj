@@ -14,6 +14,7 @@
 		FA211CB52587F86500B53D6D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FA211CB42587F86500B53D6D /* Assets.xcassets */; };
 		FA211CB82587F86500B53D6D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FA211CB62587F86500B53D6D /* LaunchScreen.storyboard */; };
 		FA84630925890EB100D317FA /* mapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA84630825890EB100D317FA /* mapViewController.swift */; };
+		FAF6898E259264FB00FB2ACB /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAF6898D259264FB00FB2ACB /* UserData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		FA211CB92587F86500B53D6D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FA84630825890EB100D317FA /* mapViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = mapViewController.swift; sourceTree = "<group>"; };
 		FA84630D258A5CED00D317FA /* Less Traveled.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Less Traveled.entitlements"; sourceTree = "<group>"; };
+		FAF6898D259264FB00FB2ACB /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -68,6 +70,7 @@
 				FA211CB62587F86500B53D6D /* LaunchScreen.storyboard */,
 				FA211CB92587F86500B53D6D /* Info.plist */,
 				FA211CB12587F86400B53D6D /* Less_Traveled.xcdatamodeld */,
+				FAF6898D259264FB00FB2ACB /* UserData.swift */,
 			);
 			path = "Less Traveled";
 			sourceTree = "<group>";
@@ -153,6 +156,7 @@
 				FA84630925890EB100D317FA /* mapViewController.swift in Sources */,
 				FA211CA92587F86400B53D6D /* AppDelegate.swift in Sources */,
 				FA211CAB2587F86400B53D6D /* SceneDelegate.swift in Sources */,
+				FAF6898E259264FB00FB2ACB /* UserData.swift in Sources */,
 				FA211CB32587F86400B53D6D /* Less_Traveled.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
