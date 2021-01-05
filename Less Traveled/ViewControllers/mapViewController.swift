@@ -20,12 +20,21 @@ class MapViewController: UIViewController {
     private var doPanToUser = true
     private var pastVisitedLocations: [CLLocation] = readVisitedLocations()
     private var justVisitedLocations: [CLLocation] = []
+    private var pastVisitedOverlays: [MKPolyline] = []
+    private var justVisitedOverlay: MKPolyline = MKPolyline()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.map.delegate = self
+        
+        self.pastVisitedOverlays = getPastVisitedOverlays(pastVisited: self.pastVisitedLocations)
+        self.showPastVisitedOverlays()
+        self.map.addOverlay(justVisitedOverlay)
+        
         map.showsUserLocation = true
         map.showsTraffic = true
+        
         attemptLocationSetup()
         startLocationAccess()
         
@@ -40,6 +49,17 @@ class MapViewController: UIViewController {
     
     public func saveUserData() {
         writeVisitedLocations(past: self.pastVisitedLocations, just: self.justVisitedLocations)
+    }
+    
+    private func showPastVisitedOverlays() {
+        map.addOverlays(self.pastVisitedOverlays)
+    }
+    
+    private func updateJustVisitedOverlay() {
+        map.removeOverlay(self.justVisitedOverlay)
+        var justVisitedCoords: [CLLocationCoordinate2D] = self.justVisitedLocations.map {$0.coordinate}
+        self.justVisitedOverlay = MKPolyline(coordinates: &justVisitedCoords, count: justVisitedCoords.count)
+        map.addOverlay(self.justVisitedOverlay)
     }
     
     @objc private func trackLabelTapped(_ sender: UITapGestureRecognizer) {
@@ -133,6 +153,7 @@ extension MapViewController: CLLocationManagerDelegate {
         if let location = locations.last {
             self.addLocation(location)
             self.currentLocation = location
+            self.updateJustVisitedOverlay()
             if doPanToUser {
                 displayCurrentRegion()
             }
@@ -142,5 +163,16 @@ extension MapViewController: CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Error requesting location: \(error.localizedDescription)")
+    }
+}
+
+// MARK: - MKMapViewDelegate
+
+extension MapViewController: MKMapViewDelegate {
+    func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+        let renderer = MKPolylineRenderer(overlay: overlay)
+        renderer.strokeColor = UIColor.black
+        renderer.lineWidth = 3
+        return renderer
     }
 }

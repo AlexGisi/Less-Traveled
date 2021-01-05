@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreLocation
+import MapKit
 
 // MARK: UserData Struct and Functions
 struct UserData: Codable {
@@ -42,6 +43,10 @@ func readVisitedLocations() -> [CLLocation] {
     } catch CocoaError.fileReadNoSuchFile {
         print("creating file")
         createUserDataFile()
+    } catch DecodingError.dataCorrupted(let context) {
+        print("json corrupted: \(context.debugDescription)")
+        removeUserDataFile()
+        createUserDataFile()
     } catch {
         print("reading error: \(error)")
     }
@@ -55,8 +60,11 @@ func writeVisitedLocations(past pastVisited: [CLLocation], just justVisited: [CL
                                                                            longitude: $0.coordinate.longitude,
                                                                            altitude: $0.altitude,
                                                                            time: $0.timestamp)}
-    
-    let data = UserData(visited: encodableVisited)
+    writeUserData(encodableVisited)
+}
+
+func writeUserData(_ visited: [VisitedLocation]) {
+    let data = UserData(visited: visited)  // TODO: write function to encapsulate the following; in createfile function do same but w empty array
     let encoder = JSONEncoder()
     let encodedData: Data
     do {
@@ -69,7 +77,6 @@ func writeVisitedLocations(past pastVisited: [CLLocation], just justVisited: [CL
     let path = getUserDataPath()
     do {
         try encodedData.write(to: path)
-        print("wrote to \(getUserDataPath().path)")
     } catch {
         print("writing error: \(error)")
     }
@@ -85,4 +92,44 @@ func getUserDataPath() -> URL {
 func createUserDataFile() {
     let fm = FileManager()
     fm.createFile(atPath: getUserDataPath().path, contents: nil, attributes: nil)
+    writeUserData([])
+}
+
+func removeUserDataFile() {
+    let fm = FileManager()
+    do {
+        try fm.removeItem(at: getUserDataPath())
+    } catch {
+        print("file remove error: \(error)")
+    }
+}
+
+// MARK: Visited Overlays
+func getPastVisitedOverlays(pastVisited locations: [CLLocation]) -> [MKPolyline] {
+    var overlays: [MKPolyline] = []
+    var coordGroups: [[CLLocationCoordinate2D]] = []
+    var group: [CLLocationCoordinate2D] = []
+    
+    if locations.count == 0 {
+        return []
+    }
+    
+    for i in 0..<locations.count-1 {
+        if locations[i+1].timestamp.timeIntervalSince(locations[i].timestamp) < 600 {
+            // Just append to existing group
+        } else {
+            coordGroups.append(group)
+            group.removeAll()
+        }
+        
+        group.append(locations[i].coordinate)
+    }
+    coordGroups.append(group)
+    
+    for arr in coordGroups {
+        overlays.append(MKPolyline(coordinates: arr, count: arr.count))
+    }
+    
+    print(overlays)
+    return overlays
 }
