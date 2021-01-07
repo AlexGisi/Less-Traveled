@@ -12,7 +12,7 @@ import CoreLocation
 class MapViewController: UIViewController {
     
     @IBOutlet weak var map: MKMapView!
-    @IBOutlet weak var trackLabel: UILabel!
+    @IBOutlet weak var trackImage: UIImageView!
     private var currentLocation: CLLocation?
     
     private let location_manager = CLLocationManager()
@@ -39,7 +39,7 @@ class MapViewController: UIViewController {
         startLocationAccess()
         
         enableTrackLabelTap()
-        updateTrackLabelText()
+        updateTrackLabelImage()
     }
     
     public func addLocation(_ location: CLLocation) {
@@ -64,20 +64,20 @@ class MapViewController: UIViewController {
     
     @objc private func trackLabelTapped(_ sender: UITapGestureRecognizer) {
         self.doPanToUser.toggle()
-        self.updateTrackLabelText()
+        self.updateTrackLabelImage()
     }
     
-    private func updateTrackLabelText() {
+    private func updateTrackLabelImage() {
         if self.doPanToUser {
-            self.trackLabel.text = "Tracking User"
+            self.trackImage.image = UIImage(systemName: "paperplane.circle.fill")
         } else {
-            self.trackLabel.text = "Not Tracking User"
+            self.trackImage.image = UIImage(systemName: "paperplane.circle")
         }
     }
     private func enableTrackLabelTap() {
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.trackLabelTapped(_:)))
-        self.trackLabel.isUserInteractionEnabled = true
-        self.trackLabel.addGestureRecognizer(tap)
+        self.trackImage.isUserInteractionEnabled = true
+        self.trackImage.addGestureRecognizer(tap)
     }
     
     private func attemptLocationSetup() {
@@ -137,7 +137,7 @@ class MapViewController: UIViewController {
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.doPanToUser = false
-        updateTrackLabelText()
+        updateTrackLabelImage()
     }
 }
 
