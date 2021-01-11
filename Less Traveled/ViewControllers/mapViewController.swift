@@ -13,13 +13,16 @@ class MapViewController: UIViewController {
     
     @IBOutlet weak var map: MKMapView!
     @IBOutlet weak var trackImage: UIImageView!
+    @IBOutlet weak var driveButton: UIButton!
     private var currentLocation: CLLocation?
     
     private let location_manager = CLLocationManager()
     
     private var doPanToUser = true
-    private var pastVisitedLocations: [CLLocation] = readVisitedLocations()
-    private var justVisitedLocations: [CLLocation] = []
+    private var driving = false
+    
+    private var pastDrives: [[CLLocation]] = readDrives()
+    private var currentDrive: [CLLocation] = []
     private var pastVisitedOverlays: [MKPolyline] = []
     private var justVisitedOverlay: MKPolyline = MKPolyline()
     
@@ -28,7 +31,7 @@ class MapViewController: UIViewController {
         
         self.map.delegate = self
         
-        self.pastVisitedOverlays = getPastVisitedOverlays(pastVisited: self.pastVisitedLocations)
+        self.pastVisitedOverlays = getPastVisitedOverlays(self.pastDrives)
         self.showPastVisitedOverlays()
         self.map.addOverlay(justVisitedOverlay)
         
@@ -38,17 +41,30 @@ class MapViewController: UIViewController {
         attemptLocationSetup()
         startLocationAccess()
         
-        enableTrackLabelTap()
+        enableUIGestures()
         updateTrackLabelImage()
     }
     
     public func addLocation(_ location: CLLocation) {
-        self.justVisitedLocations.append(location)
+        self.currentDrive.append(location)
         saveUserData()
     }
     
     public func saveUserData() {
-        writeVisitedLocations(past: self.pastVisitedLocations, just: self.justVisitedLocations)
+        writeDrives(self.pastDrives)
+    }
+    
+    public func startDrive() {
+        self.driving = true
+        self.driveButton.setTitle("End Drive", for: .normal)
+    }
+    
+    public func endDrive() {
+        self.driving = false
+        self.pastDrives.append(self.currentDrive)
+        self.currentDrive.removeAll()
+        saveUserData()
+        self.driveButton.setTitle("Start Drive", for: .normal)
     }
     
     private func showPastVisitedOverlays() {
@@ -57,7 +73,7 @@ class MapViewController: UIViewController {
     
     private func updateJustVisitedOverlay() {
         map.removeOverlay(self.justVisitedOverlay)
-        var justVisitedCoords: [CLLocationCoordinate2D] = self.justVisitedLocations.map {$0.coordinate}
+        var justVisitedCoords: [CLLocationCoordinate2D] = self.currentDrive.map {$0.coordinate}
         self.justVisitedOverlay = MKPolyline(coordinates: &justVisitedCoords, count: justVisitedCoords.count)
         map.addOverlay(self.justVisitedOverlay)
     }
@@ -67,6 +83,14 @@ class MapViewController: UIViewController {
         self.updateTrackLabelImage()
     }
     
+    @objc private func driveButtonTapped(_ sender: UITapGestureRecognizer) {
+        if self.driving {
+            endDrive()
+        } else {
+            startDrive()
+        }
+    }
+    
     private func updateTrackLabelImage() {
         if self.doPanToUser {
             self.trackImage.image = UIImage(systemName: "paperplane.circle.fill")
@@ -74,10 +98,14 @@ class MapViewController: UIViewController {
             self.trackImage.image = UIImage(systemName: "paperplane.circle")
         }
     }
-    private func enableTrackLabelTap() {
+    private func enableUIGestures() {
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.trackLabelTapped(_:)))
         self.trackImage.isUserInteractionEnabled = true
         self.trackImage.addGestureRecognizer(tap)
+        
+        let driveTap = UITapGestureRecognizer(target: self, action: #selector(self.driveButtonTapped(_:)))
+        self.driveButton.isUserInteractionEnabled = true
+        self.driveButton.addGestureRecognizer(driveTap)
     }
     
     private func attemptLocationSetup() {
@@ -151,14 +179,15 @@ extension MapViewController: CLLocationManagerDelegate {
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.last {
-            self.addLocation(location)
             self.currentLocation = location
-            self.updateJustVisitedOverlay()
-            if doPanToUser {
-                displayCurrentRegion()
+            if self.driving {
+                self.addLocation(location)
+                self.updateJustVisitedOverlay()
             }
         }
-        
+        if doPanToUser {
+            displayCurrentRegion()
+        }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {

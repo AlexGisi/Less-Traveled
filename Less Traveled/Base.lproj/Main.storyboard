@@ -42,6 +42,7 @@
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                     </view>
                     <connections>
+                        <outlet property="driveButton" destination="Ifr-Ba-Dlw" id="RwD-uE-mqg"/>
                         <outlet property="map" destination="Bf9-Ya-ySw" id="xXi-yy-qKN"/>
                         <outlet property="trackImage" destination="iPY-MI-5AT" id="Yup-9Q-5Mb"/>
                     </connections>

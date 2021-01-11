@@ -11,7 +11,7 @@ import MapKit
 
 // MARK: UserData Struct and Functions
 struct UserData: Codable {
-    let visited: [VisitedLocation]
+    let drives: [[VisitedLocation]]
 }
 
 struct VisitedLocation: Codable {
@@ -30,8 +30,8 @@ struct VisitedLocation: Codable {
     }
 }
 
-func readVisitedLocations() -> [CLLocation] {
-    var visited: [CLLocation] = []
+func readDrives() -> [[CLLocation]] {
+    var pastDrives: [[CLLocation]] = []
     let decoder = JSONDecoder()
     
     let path = getUserDataPath()
@@ -39,7 +39,10 @@ func readVisitedLocations() -> [CLLocation] {
         let encodedData = try Data(contentsOf: path)
         let data = try decoder.decode(UserData.self, from: encodedData)
         
-        visited = data.visited.map {$0.getCLLocation()}
+        for drive in data.drives {
+            let mappedDrive = drive.map {$0.getCLLocation()}
+            pastDrives.append(mappedDrive)
+        }
     } catch CocoaError.fileReadNoSuchFile {
         print("creating file")
         createUserDataFile()
@@ -51,20 +54,23 @@ func readVisitedLocations() -> [CLLocation] {
         print("reading error: \(error)")
     }
     
-    return visited
+    return pastDrives
 }
 
-func writeVisitedLocations(past pastVisited: [CLLocation], just justVisited: [CLLocation]) {
-    let visited: [CLLocation] = pastVisited + justVisited
-    let encodableVisited: [VisitedLocation] = visited.map {VisitedLocation(latitude: $0.coordinate.latitude,
-                                                                           longitude: $0.coordinate.longitude,
-                                                                           altitude: $0.altitude,
-                                                                           time: $0.timestamp)}
-    writeUserData(encodableVisited)
+func writeDrives(_ drives: [[CLLocation]]) {
+    var encodableDrives: [[VisitedLocation]] = []
+    for drive in drives {
+        let encodableDrive = drive.map { VisitedLocation(latitude: $0.coordinate.latitude,
+                                                         longitude: $0.coordinate.longitude,
+                                                         altitude: $0.altitude,
+                                                         time: $0.timestamp)}
+        encodableDrives.append(encodableDrive)
+    }
+    
+    writeUserData(UserData(drives: encodableDrives))
 }
 
-func writeUserData(_ visited: [VisitedLocation]) {
-    let data = UserData(visited: visited)  // TODO: write function to encapsulate the following; in createfile function do same but w empty array
+func writeUserData(_ data: UserData) {
     let encoder = JSONEncoder()
     let encodedData: Data
     do {
@@ -92,7 +98,7 @@ func getUserDataPath() -> URL {
 func createUserDataFile() {
     let fm = FileManager()
     fm.createFile(atPath: getUserDataPath().path, contents: nil, attributes: nil)
-    writeUserData([])
+    writeUserData(UserData(drives: []))
 }
 
 func removeUserDataFile() {
@@ -105,26 +111,17 @@ func removeUserDataFile() {
 }
 
 // MARK: Visited Overlays
-func getPastVisitedOverlays(pastVisited locations: [CLLocation]) -> [MKPolyline] {
+func getPastVisitedOverlays(_ drives: [[CLLocation]]) -> [MKPolyline] {
     var overlays: [MKPolyline] = []
     var coordGroups: [[CLLocationCoordinate2D]] = []
-    var group: [CLLocationCoordinate2D] = []
     
-    if locations.count == 0 {
+    if drives.count == 0 {
         return []
     }
     
-    for i in 0..<locations.count-1 {
-        if locations[i+1].timestamp.timeIntervalSince(locations[i].timestamp) < 600 {
-            // Just append to existing group
-        } else {
-            coordGroups.append(group)
-            group.removeAll()
-        }
-        
-        group.append(locations[i].coordinate)
+    for drive in drives {
+        coordGroups.append(drive.map {$0.coordinate})
     }
-    coordGroups.append(group)
     
     for arr in coordGroups {
         overlays.append(MKPolyline(coordinates: arr, count: arr.count))
