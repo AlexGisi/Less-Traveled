@@ -180,7 +180,7 @@ extension MapViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.last {
             self.currentLocation = location
-            if self.driving {
+            if self.driving && !location.wasVisited(checkedAgainst: Array(self.pastDrives.joined())) {
                 self.addLocation(location)
                 self.updateJustVisitedOverlay()
             }

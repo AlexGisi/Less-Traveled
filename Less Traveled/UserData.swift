@@ -127,6 +127,11 @@ func getPastVisitedOverlays(_ drives: [[CLLocation]]) -> [MKPolyline] {
         overlays.append(MKPolyline(coordinates: arr, count: arr.count))
     }
     
-    print(overlays)
     return overlays
+}
+
+extension CLLocation {
+    func wasVisited(checkedAgainst previousArr: [CLLocation]) -> Bool {
+        
+    }
 }
